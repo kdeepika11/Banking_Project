@@ -1,0 +1,68 @@
+resources:
+  jobs:
+    neobank_master_job:
+      name: NeoBank_Master_Job
+      tasks:
+        - task_key: Source_Silver_Blob
+          disabled: false
+          email_notifications: {}
+          run_if: ALL_SUCCESS
+          run_job_task:
+            job_id: 932790265150133
+            job_parameters:
+              source_system: blob
+          timeout_seconds: 0
+          webhook_notifications: {}
+        - task_key: Source_Silver_SQLServer
+          disabled: false
+          email_notifications: {}
+          run_if: ALL_SUCCESS
+          run_job_task:
+            job_id: 932790265150133
+            job_parameters:
+              source_system: sqlserver
+          timeout_seconds: 0
+          webhook_notifications: {}
+        - task_key: Silver_to_Gold
+          depends_on:
+            - task_key: Source_Silver_Blob
+            - task_key: Source_Silver_SQLServer
+          disabled: false
+          email_notifications: {}
+          run_if: ALL_DONE
+          run_job_task:
+            job_id: 212576165029150
+            job_parameters:
+              source_system: silver
+          timeout_seconds: 0
+          webhook_notifications: {}
+        - task_key: Email_Notification
+          depends_on:
+            - task_key: Silver_to_Gold
+          disabled: true
+          email_notifications: {}
+          environment_key: Default
+          notebook_task:
+            base_parameters:
+              run_id: '{{job.run_id}}'
+            notebook_path: /Repos/kdeepika11@gmail.com/Banking_Project/04_Email_Notification/01_Send_Email
+            source: WORKSPACE
+          run_if: ALL_DONE
+          timeout_seconds: 0
+          webhook_notifications: {}
+      email_notifications:
+        no_alert_for_skipped_runs: false
+      environments:
+        - environment_key: Default
+          spec:
+            environment_version: "5"
+      git_source:
+        git_branch: DEV
+        git_provider: gitHub
+        git_url: https://github.com/kdeepika11/databricks_course.git
+      max_concurrent_runs: 1
+      performance_target: PERFORMANCE_OPTIMIZED
+      queue:
+        enabled: true
+      timeout_seconds: 0
+      webhook_notifications: {}
