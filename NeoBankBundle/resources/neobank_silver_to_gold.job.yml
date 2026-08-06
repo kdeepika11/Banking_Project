@@ -1,0 +1,54 @@
+resources:
+  jobs:
+    neobank_silver_to_gold:
+      name: NeoBank_Silver_to_Gold
+      tasks:
+        - task_key: Get_List_of_tables
+          disabled: false
+          email_notifications: {}
+          notebook_task:
+            base_parameters:
+              source_system: silver
+            notebook_path: /Repos/kdeepika11@gmail.com/Banking_Project/02_Source_to_Silver/01_Read_Tables_List
+            source: WORKSPACE
+          run_if: ALL_SUCCESS
+          timeout_seconds: 0
+          webhook_notifications: {}
+        - task_key: Ingest_Data_from_Source_Silver
+          depends_on:
+            - task_key: Get_List_of_tables
+          disabled: false
+          email_notifications: {}
+          for_each_task:
+            concurrency: 4
+            inputs: '{{tasks.Get_List_of_tables.values.tables_metadata}}'
+            task:
+              disabled: false
+              email_notifications: {}
+              notebook_task:
+                base_parameters:
+                  table_metadata: '{{input}}'
+                notebook_path: /Repos/kdeepika11@gmail.com/Banking_Project/03_Silver_to_Gold/01_Silver_to_Gold_Driver
+                source: WORKSPACE
+              run_if: ALL_SUCCESS
+              task_key: Ingest_Data_from_Silver_Gold_iteration
+              timeout_seconds: 0
+              webhook_notifications: {}
+          run_if: ALL_SUCCESS
+          timeout_seconds: 0
+          webhook_notifications: {}
+      parameters:
+        - name: run_id
+          default: "123564"
+      email_notifications:
+        no_alert_for_skipped_runs: false
+      git_source:
+        git_branch: DEV
+        git_provider: gitHub
+        git_url: https://github.com/kdeepika11/databricks_course.git
+      max_concurrent_runs: 5
+      performance_target: PERFORMANCE_OPTIMIZED
+      queue:
+        enabled: true
+      timeout_seconds: 0
+      webhook_notifications: {}
