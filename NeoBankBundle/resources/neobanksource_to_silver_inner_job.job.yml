@@ -1,0 +1,53 @@
+resources:
+  jobs:
+    neobanksource_to_silver_inner_job:
+      name: NeoBankSource_to_Silver_Inner_job
+      tasks:
+        - task_key: Get_list_of_Parameters
+          disabled: false
+          email_notifications: {}
+          notebook_task:
+            notebook_path: ../src/neobanksource_to_silver_inner_job/02_Read_Table_Parameters.ipynb
+            source: WORKSPACE
+          run_if: ALL_SUCCESS
+          timeout_seconds: 0
+          webhook_notifications: {}
+        - task_key: Source_to_Bronze_Ingestion
+          depends_on:
+            - task_key: Get_list_of_Parameters
+          disabled: false
+          email_notifications: {}
+          notebook_task:
+            base_parameters:
+              table_parameters: '{{tasks.Get_list_of_Parameters.values.table_parameters}}'
+            notebook_path: ../src/neobanksource_to_silver_inner_job/03_Source_to_Bronze.ipynb
+            source: WORKSPACE
+          run_if: ALL_SUCCESS
+          timeout_seconds: 0
+          webhook_notifications: {}
+        - task_key: Bronze_to_Silver_ingestion
+          depends_on:
+            - task_key: Source_to_Bronze_Ingestion
+          disabled: false
+          email_notifications: {}
+          notebook_task:
+            base_parameters:
+              table_parameters: '{{tasks.Get_list_of_Parameters.values.table_parameters}}'
+            notebook_path: ../src/neobanksource_to_silver_inner_job/04_Bronze_to_Silver.ipynb
+            source: WORKSPACE
+          run_if: ALL_SUCCESS
+          timeout_seconds: 0
+          webhook_notifications: {}
+      parameters:
+        - name: run_id
+          default: ""
+        - name: table_metadata
+          default: ""
+      email_notifications:
+        no_alert_for_skipped_runs: false
+      max_concurrent_runs: 4
+      performance_target: PERFORMANCE_OPTIMIZED
+      queue:
+        enabled: true
+      timeout_seconds: 0
+      webhook_notifications: {}
